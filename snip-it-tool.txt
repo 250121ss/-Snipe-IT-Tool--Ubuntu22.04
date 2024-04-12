@@ -1,0 +1,145 @@
+
+ +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ YouTube:  https://www.youtube.com/@linuxnetworkinghelp  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+=====================================================================================  Please Subscribe   ====================================================== 
+
+
+
+Step 1: Update System
+
+sudo apt update
+sudo apt upgrade
+
+
+Step 2: Install Required Dependencies
+
+sudo add-apt-repository ppa:ondrej/php
+sudo apt update
+sudo apt install php8.1 -y
+sudo apt-get install -y php8.1-cli php8.1-common php8.1-mysql php8.1-zip php8.1-gd php8.1-mbstring php8.1-curl php8.1-xml php8.1-bcmath php8.1-redis php8.1-fpm php8.1-intl php8.1-zip php8.1-soap php8.1-opcache
+sudo apt install apache2 mysql-server php php-cli php-mysql php-mbstring php-xml php-curl php-zip php-gd composer git unzip
+
+===
+phpmyadmin upload size incress conf  =====
+
+sudo vi /etc/php/8.1/apache2/php.ini
+max_execution_time = -1
+max_input_time = -1
+memory_limit = -1
+post_max_size = 3000M
+upload_max_filesize = 2048M
+
+===
+sudo vi /etc/apache2/mods-enabled/dir.conf
+
+Replace index.php  , index.html
+
+==
+sudo systemctl restart php8.1-fpm.service
+
+sudo phpenmod mbstring
+sudo a2enmod rewrite 
+===
+conf
+sudo vi /etc/apache2/apache2.conf
+
+None -> All
+
+
+====
+
+Step 3: Configure MySQL
+
+
+sudo mysql_secure_installation
+
+sudo mysql
+CREATE DATABASE snipeit_db;
+CREATE USER 'snipeit_user'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON snipeit_db.* TO 'snipeit_user'@'localhost';
+FLUSH PRIVILEGES;
+exit;
+
+====
+Step 4: Download Snipe-IT
+
+sudo git clone https://github.com/snipe/snipe-it snipeit
+
+==== symlink  create ==== 
+
+sudo ln -sf /home/ubuntu/projectpath   /var/www/html
+
+Step 5: Install Dependencies via Composer  === 
+
+sudo composer install --no-dev --prefer-source
+
+Step 6: Configure Environment Variables   === 
+
+sudo cp .env.example .env
+
+
+sudo vi .env
+
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=http://your_domain_or_ip
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_DATABASE=snipeit_db
+DB_USERNAME=snipeit_user
+DB_PASSWORD=your_password
+
+Step 7: Set Permissions  === 
+
+sudo chmod -R 755 /home/ubuntu
+sudo chown -R www-data:www-data storage public/uploads
+sudo chmod -R 755 storage public/uploads
+sudo chown -R www-data:www-data snipeit
+
+Step 8: Generate Application Key  === 
+
+sudo php artisan key:generate
+
+
+Step 9: Configure Apache  ====
+
+sudo vi /etc/apache2/sites-available/snipeit.conf
+
+<VirtualHost *:80>
+    ServerAdmin admin@example.com
+    DocumentRoot /var/www/html/snipeit/public
+    ServerName your_domain_or_ip
+
+    <Directory /var/www/html/snipeit/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+
+
+===
+
+sudo a2ensite snipeit.conf
+sudo a2enmod rewrite
+
+
+sudo systemctl restart apache2
+
+Step 11: Set Up Cron Jobs  == =
+
+sudo crontab -e
+
+* * * * * php /var/www/html/snipeit/artisan schedule:run >> /dev/null 2>&1
+
+
+
+
+
+
+
